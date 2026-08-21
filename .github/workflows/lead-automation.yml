@@ -1,0 +1,37 @@
+name: Lead automation (disabled)
+
+# Scheduling is intentionally not enabled yet. After the controlled live test,
+# add cron schedules here for twice-daily runs.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notion-lead-automation
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: pytest -q
+      - name: Inspect only — no Notion writes or email sends
+        env:
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          OUTLOOK_MAILBOX: hello@design-itude.com
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
+          ENABLE_WRITES: "false"
+          SEND_INTRODUCTION_EMAIL: "false"
+        run: python run_leads.py
