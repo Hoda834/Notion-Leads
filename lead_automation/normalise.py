@@ -2,6 +2,10 @@ import re
 
 
 INVALID_PHONE_VALUES = {"", "0", "00", "000", "0000", "n/a", "na", "none"}
+UK_POSTCODE = re.compile(
+    r"^(GIR 0AA|(?:[A-Z]{1,2}\d[A-Z\d]?|[A-Z]{2}\d{1,2}) \d[A-Z]{2})$",
+    flags=re.IGNORECASE,
+)
 
 
 def normalise_email(value: str | None) -> str:
@@ -10,9 +14,12 @@ def normalise_email(value: str | None) -> str:
 
 def normalise_postcode(value: str | None) -> str:
     compact = re.sub(r"\s+", "", (value or "").upper())
-    if len(compact) > 3:
-        return f"{compact[:-3]} {compact[-3:]}"
-    return compact
+    if not compact:
+        return ""
+    formatted = f"{compact[:-3]} {compact[-3:]}" if len(compact) > 3 else compact
+    if not UK_POSTCODE.fullmatch(formatted):
+        raise ValueError("Invalid UK postcode")
+    return formatted
 
 
 def proper_name(value: str) -> str:
