@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .models import Lead
 
 
@@ -14,7 +16,6 @@ def build_notion_properties(lead: Lead, lead_number: str, project_manager_id: st
         "Client Email": {"email": lead.client_email},
         "Lead Source": {"select": {"name": "Local Surveyors"}},
         "Status": {"status": {"name": "Lead | Consultation Phase"}},
-        "Email Follow-Up?": {"select": {"name": "Yes"}},
     }
     if lead.client_phone:
         properties["Client Phone"] = {"phone_number": lead.client_phone}
@@ -31,3 +32,12 @@ def build_notion_properties(lead: Lead, lead_number: str, project_manager_id: st
 
     # Project Name and Project Notes are intentionally excluded for new leads.
     return properties
+
+
+def build_introduction_sent_properties(sent_at: datetime) -> dict:
+    """Build the update applied only after the introduction email succeeds."""
+    return {
+        "Follow Up Status": {"status": {"name": "Introduction"}},
+        "Last Email Follow-Up": {"date": {"start": sent_at.isoformat()}},
+        "Email Follow-Up?": {"select": {"name": "Yes"}},
+    }

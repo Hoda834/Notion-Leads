@@ -33,3 +33,11 @@ class DuplicateDecision:
     duplicate: bool
     needs_review: bool
     reason: str | None = None
+
+
+@dataclass(frozen=True)
+class IntroductionEmail:
+    to: str
+    subject: str
+    body: str
+    template: str
