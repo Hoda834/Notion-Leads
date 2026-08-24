@@ -1,10 +1,15 @@
 from datetime import datetime, timezone
 
+from lead_automation.email_templates import render_introduction_email
 from lead_automation.models import ExistingLead
-from lead_automation.notion_mapping import build_notion_properties
+from lead_automation.notion_mapping import (
+    build_introduction_sent_properties,
+    build_notion_properties,
+)
 from lead_automation.normalise import normalise_uk_phone, proper_name
 from lead_automation.parser import parse_local_surveyors_lead
 from lead_automation.rules import check_duplicate, next_lead_number
+from offline_demo import build_demo
 
 
 HTML = """
@@ -49,8 +54,35 @@ def test_parser_and_mapping_exclude_project_fields():
 
     properties = build_notion_properties(lead, "L1-26-00365")
     assert properties["Status"]["status"]["name"] == "Lead | Consultation Phase"
+    assert "Email Follow-Up?" not in properties
+    assert "Follow Up Status" not in properties
+    assert "Last Email Follow-Up" not in properties
     assert "Project Name" not in properties
     assert "Project Notes" not in properties
+
+
+def test_residential_email_preview_and_post_send_update():
+    email = render_introduction_email(make_lead())
+    assert email.to == "kirstyackleton@gmail.com"
+    assert email.template == "residential"
+    assert email.subject == "We hear you have something exciting in the pipeline?"
+    assert email.body.startswith("Dear Kirsty Ackleton,")
+    assert "dia-residential-architecture" in email.body
+
+    sent_at = datetime(2026, 8, 24, 12, 15, tzinfo=timezone.utc)
+    update = build_introduction_sent_properties(sent_at)
+    assert update["Follow Up Status"]["status"]["name"] == "Introduction"
+    assert update["Email Follow-Up?"]["select"]["name"] == "Yes"
+    assert update["Last Email Follow-Up"]["date"]["start"] == sent_at.isoformat()
+
+
+def test_commercial_email_preview():
+    lead = make_lead()
+    commercial = lead.__class__(**{**lead.__dict__, "project_type": "Commercial"})
+    email = render_introduction_email(commercial)
+    assert email.template == "commercial"
+    assert email.body.startswith("Hello Kirsty Ackleton,")
+    assert "dia-commercial-brochure" in email.body
 
 
 def test_lead_number():
@@ -80,3 +112,18 @@ def test_active_matching_contact_is_duplicate():
         ],
     )
     assert decision.duplicate is True
+
+
+def test_complete_offline_demo_is_safe_and_has_no_project_manager():
+    result = build_demo()
+    assert result["safety"] == {
+        "outlook_read": False,
+        "notion_write": False,
+        "email_sent": False,
+        "mode": "offline simulation",
+    }
+    properties = result["notion_properties_preview"]
+    assert "Project Manager" not in properties
+    assert "Project Name" not in properties
+    assert "Project Notes" not in properties
+    assert result["duplicate_decision"]["duplicate"] is False
