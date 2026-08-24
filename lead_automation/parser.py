@@ -7,11 +7,11 @@ from .normalise import normalise_postcode, normalise_uk_phone, proper_name
 
 
 FIELD_PATTERNS = {
-    "name": r"^\s*Name:\s*(.+)$",
-    "email": r"^\s*Email:\s*([^\s]+)\s*$",
-    "phone": r"^\s*Phone:\s*(.+)$",
-    "postcode": r"^\s*Postcode:\s*(.+)$",
-    "role": r"^\s*Role:\s*(.+)$",
+    "name": r"\bName:\s*(.+)",
+    "email": r"\bEmail:\s*([^\s]+)",
+    "phone": r"\bPhone:\s*(.+)",
+    "postcode": r"\bPostcode:\s*(.+)",
+    "role": r"\bRole:\s*(.+)",
 }
 
 
@@ -47,7 +47,7 @@ def html_to_text(html: str) -> str:
 
 
 def find_field(text: str, pattern: str, required: bool = True) -> str:
-    match = re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE)
+    match = re.search(pattern, text, flags=re.IGNORECASE)
     if not match:
         if required:
             raise ValueError(f"Required lead field was not found: {pattern}")
@@ -72,8 +72,8 @@ def classify_project_type(information: str) -> str | None:
         "Retail": ("shop", "store", "retail unit"),
         "Commercial": ("commercial", "restaurant", "hotel", "business premises"),
     }
-    # Priority is intentional: a home office remains a residential property project.
-    return next((label for label, terms in rules.items() if any(term in text for term in terms)), None)
+    matches = [label for label, terms in rules.items() if any(term in text for term in terms)]
+    return matches[0] if len(matches) == 1 else None
 
 
 def classify_discipline(service: str, information: str) -> str | None:
@@ -112,11 +112,10 @@ def parse_local_surveyors_lead(
         client_email=find_field(text, FIELD_PATTERNS["email"]).casefold(),
         client_phone=normalise_uk_phone(find_field(text, FIELD_PATTERNS["phone"], required=False)),
         postcode=postcode,
-        role=find_field(text, FIELD_PATTERNS["role"], required=False),
         source="Local Surveyors",
         service=service,
         information=information,
         project_type=classify_project_type(information),
         discipline=classify_discipline(service, information),
-        location="UK",
+        location="UK" if postcode else None,
     )

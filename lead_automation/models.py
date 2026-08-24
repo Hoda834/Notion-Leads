@@ -10,7 +10,6 @@ class Lead:
     client_email: str
     client_phone: str | None
     postcode: str
-    role: str
     source: str
     service: str
     information: str
@@ -27,8 +26,6 @@ class ExistingLead:
     postcode: str | None
     source: str | None
     status: str | None
-    page_id: str | None = None
-    last_email_follow_up: str | None = None
 
 
 @dataclass(frozen=True)
@@ -36,12 +33,3 @@ class DuplicateDecision:
     duplicate: bool
     needs_review: bool
     reason: str | None = None
-
-
-@dataclass(frozen=True)
-class MailMessage:
-    message_id: str
-    internet_message_id: str | None
-    subject: str
-    received_at: datetime
-    html_body: str
