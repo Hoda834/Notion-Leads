@@ -1,5 +1,3 @@
-from datetime import date
-
 from .models import Lead
 
 
@@ -33,28 +31,3 @@ def build_notion_properties(lead: Lead, lead_number: str, project_manager_id: st
 
     # Project Name and Project Notes are intentionally excluded for new leads.
     return properties
-
-
-def build_page_children(lead: Lead) -> list[dict]:
-    """Preserve source details in the page body without using Project Name or Project Notes."""
-    lines = [
-        f"Service: {lead.service or '-'}",
-        f"Role: {lead.role or '-'}",
-        f"Information: {lead.information or '-'}",
-        f"Outlook message reference: {lead.outlook_message_id}",
-    ]
-    return [
-        {
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {"rich_text": [{"type": "text", "text": {"content": line}}]},
-        }
-        for line in lines
-    ]
-
-
-def build_email_sent_properties(sent_on: date) -> dict:
-    return {
-        "Last Email Follow-Up": {"date": {"start": sent_on.isoformat()}},
-        "Follow Up Status": {"status": {"name": "Introduction"}},
-    }

@@ -20,7 +20,6 @@ def next_lead_number(existing_numbers: list[str], year: int) -> str:
 
 
 def check_duplicate(lead: Lead, existing: list[ExistingLead]) -> DuplicateDecision:
-    possible_match = False
     for item in existing:
         if item.outlook_message_id and item.outlook_message_id == lead.outlook_message_id:
             return DuplicateDecision(True, False, "Outlook Message ID already exists")
@@ -39,8 +38,6 @@ def check_duplicate(lead: Lead, existing: list[ExistingLead]) -> DuplicateDecisi
         if same_email and same_source and (same_phone or same_postcode):
             return DuplicateDecision(True, False, "Active lead has matching contact details")
         if same_email or (same_phone and same_postcode):
-            possible_match = True
+            return DuplicateDecision(False, True, "Possible duplicate requires review")
 
-    if possible_match:
-        return DuplicateDecision(False, True, "Possible duplicate requires review")
     return DuplicateDecision(False, False)
