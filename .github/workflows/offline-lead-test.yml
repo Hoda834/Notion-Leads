@@ -1,0 +1,37 @@
+name: Test lead automation offline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run offline unit tests
+        run: |
+          python - <<'PY'
+          import inspect
+          import tests.test_offline_rules as tests
+
+          count = 0
+          for name, function in inspect.getmembers(tests, inspect.isfunction):
+              if name.startswith("test_"):
+                  function()
+                  count += 1
+          print(f"{count} offline tests passed")
+          PY
+
+      - name: Build safe preview
+        run: python offline_demo.py
